@@ -60,7 +60,9 @@ export const UIAgent: React.FC = () => {
     if (!fileList || !fileList.length) return;
     setLoading(true);
     try {
-      const { records: rawRecords } = await fileAgent.parse(fileList[0]);
+      const buffer = await fileList[0].arrayBuffer();
+      const safeInput: File | ArrayBuffer | Uint8Array = buffer instanceof ArrayBuffer ? buffer : new Uint8Array(buffer);
+      const { records: rawRecords } = await fileAgent.parse(safeInput);
       const result = dataAgent.normalize(rawRecords);
       setRecords(result.records);
       setErrors(result.errors);
@@ -78,8 +80,11 @@ export const UIAgent: React.FC = () => {
     try {
       const binary = await platform.openFileDialog();
       if (!binary) return;
-      const buffer = binary.buffer.slice(binary.byteOffset, binary.byteOffset + binary.byteLength);
-      const { records: rawRecords } = await fileAgent.parse(buffer);
+      const view = new Uint8Array(binary.buffer, binary.byteOffset, binary.byteLength);
+      const ab = new ArrayBuffer(view.byteLength);
+      new Uint8Array(ab).set(view);
+
+      const { records: rawRecords } = await fileAgent.parse(ab);
       const result = dataAgent.normalize(rawRecords);
       setRecords(result.records);
       setErrors(result.errors);
@@ -204,14 +209,14 @@ export const UIAgent: React.FC = () => {
           </div>
         )}
         {!loading && hasRecords && template && (
-          <div className="flex flex-col gap-2 px-0">
+          <div className="flex flex-col gap-2 px-0 py-4">
             <div className="records-scroll overflow-x-auto px-10 pb-2 print-no-padding-margin">
               <div className="records-strip flex flex-nowrap px-0 py-4 gap-6 print-no-padding-margin print:flex-wrap">
                 {records.map((item, idx) => (
                   <div
                     key={`${item.payee}-${idx}`}
-                    className={clsx("records-page shrink-0 border border-transparent transition print-no-padding-margin",
-                      idx === currentIndex && "border-blue-400 border-2"
+                    className={clsx("records-page shrink-0 border-transparent border transition print-no-padding-margin",
+                      idx === currentIndex && "ring-blue-400 ring-2"
                     )}
                     ref={(node) => {
                       recordRefs.current[idx] = node;

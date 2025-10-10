@@ -1,6 +1,6 @@
 import type { CheckRecord, RawRecord } from "../types";
 import { applyFormat, formatCurrency, toCjkUpper } from "../utils/formatValue";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 
 export interface FieldMapping {
   payee: string;
@@ -25,6 +25,15 @@ const DEFAULT_MAPPING: FieldMapping = {
   date: "date",
   memo: "memo"
 };
+
+function toDayjsInput(v: unknown): string | number | Date | Dayjs | undefined {
+  if (v == null) return undefined;
+  if (dayjs.isDayjs(v)) return v;
+  if (v instanceof Date) return v;
+  if (typeof v === "number") return v;
+  if (typeof v === "string" && v.trim() !== "") return v;
+  return undefined; // {}, [], 其他雜項一律丟掉，避免 dayjs(undefined) 變成 now
+}
 
 export class DataAgent {
   private mapping: FieldMapping;
@@ -56,7 +65,8 @@ export class DataAgent {
         return;
       }
 
-      const dateValue = dateRaw ? dayjs(dateRaw).format(this.dateFormat) : "";
+      const parsed = toDayjsInput(dateRaw);
+      const dateValue = parsed ? dayjs(parsed).format(this.dateFormat) : "";
 
       clean.push({
         payee: String(payee),

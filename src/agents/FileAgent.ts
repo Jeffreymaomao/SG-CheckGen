@@ -25,14 +25,16 @@ export class FileAgent {
     if (input instanceof ArrayBuffer) {
       return input;
     }
+  if (input instanceof Uint8Array) {
+    const view = input;
+    const ab = new ArrayBuffer(view.byteLength);
+    new Uint8Array(ab).set(view);
+    return ab;
+  }
 
-    if (input instanceof Uint8Array) {
-      return input.buffer.slice(input.byteOffset, input.byteOffset + input.byteLength);
-    }
-
-    if ("arrayBuffer" in input) {
-      return input.arrayBuffer();
-    }
+  if ("arrayBuffer" in input) {
+    return await (input as File).arrayBuffer();
+  }
 
     throw new Error("Unsupported input type for FileAgent");
   }
