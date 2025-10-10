@@ -195,7 +195,7 @@ export const UIAgent: React.FC = () => {
         </div>
       )}
 
-      <section className="flex-1 overflow-hidden overflow-y-auto rounded border border-slate-200 bg-white p-4 print-no-padding-margin" id="preview-container">
+      <section className="flex-1 overflow-visible overflow-y-auto rounded border border-slate-200 bg-white print-no-padding-margin" id="preview-container">
         {loading && <p className="text-sm text-slate-500">Parsing workbook…</p>}
         {!loading && !hasRecords && (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-slate-500">
@@ -204,14 +204,14 @@ export const UIAgent: React.FC = () => {
           </div>
         )}
         {!loading && hasRecords && template && (
-          <div className="flex flex-col gap-6">
-            <div className="records-scroll overflow-x-auto pb-2 print-no-padding-margin">
-              <div className="records-strip flex flex-nowrap gap-6 print-no-padding-margin print:flex-wrap">
+          <div className="flex flex-col gap-2 px-0">
+            <div className="records-scroll overflow-x-auto px-10 pb-2 print-no-padding-margin">
+              <div className="records-strip flex flex-nowrap px-0 py-4 gap-6 print-no-padding-margin print:flex-wrap">
                 {records.map((item, idx) => (
                   <div
                     key={`${item.payee}-${idx}`}
-                    className={clsx("records-page shrink-0 rounded border border-transparent transition print-no-padding-margin",
-                      idx === currentIndex && "border-sky-400 ring-2 ring-sky-200"
+                    className={clsx("records-page shrink-0 border border-transparent transition print-no-padding-margin",
+                      idx === currentIndex && "border-blue-400 border-2"
                     )}
                     ref={(node) => {
                       recordRefs.current[idx] = node;
@@ -231,7 +231,7 @@ export const UIAgent: React.FC = () => {
                 ))}
               </div>
             </div>
-            <details className="w-full rounded border border-slate-200 bg-slate-50 p-3 text-sm no-print">
+            <details className="w-90% rounded border border-slate-200 bg-slate-50 mx-4 p-3 text-sm no-print">
               <summary className="cursor-pointer font-medium text-slate-700">Parsed Records Preview</summary>
               <div className="mt-3 max-h-48 overflow-auto rounded border border-slate-200 bg-white">
                 <table className="min-w-full divide-y divide-slate-200 text-left text-xs text-slate-600">
