@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import { FileAgent } from "./FileAgent";
 import { DataAgent } from "./DataAgent";
@@ -21,6 +21,7 @@ export const UIAgent: React.FC = () => {
   const [activeTemplate, setActiveTemplate] = useState(templateAgent.getActive()?.id ?? "");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
+  const recordRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const templates = templateAgent.getAll();
   const template = activeTemplate ? templateAgent.setActive(activeTemplate) : templateAgent.getActive();
@@ -92,6 +93,38 @@ export const UIAgent: React.FC = () => {
   };
 
   const hasRecords = records.length > 0;
+
+  useEffect(() => {
+    recordRefs.current = recordRefs.current.slice(0, records.length);
+  }, [records.length]);
+
+  useEffect(() => {
+    const node = recordRefs.current[currentIndex];
+    if (node) {
+      node.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  }, [currentIndex]);
+
+  useEffect(() => {
+    const handleKey = (event: KeyboardEvent) => {
+      if (!records.length) return;
+      const target = event.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) {
+        return;
+      }
+
+      if (event.key === "ArrowRight") {
+        setCurrentIndex((prev) => Math.min(prev + 1, records.length - 1));
+      }
+
+      if (event.key === "ArrowLeft") {
+        setCurrentIndex((prev) => Math.max(prev - 1, 0));
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [records.length]);
 
   return (
     <div className="flex h-full flex-col gap-4 p-4 print-no-padding-margin">
@@ -177,7 +210,12 @@ export const UIAgent: React.FC = () => {
                 {records.map((item, idx) => (
                   <div
                     key={`${item.payee}-${idx}`}
-                    className="records-page shrink-0 rounded border border-transparent transition print-no-padding-margin"
+                    className={clsx("records-page shrink-0 rounded border border-transparent transition print-no-padding-margin",
+                      idx === currentIndex && "border-sky-400 ring-2 ring-sky-200"
+                    )}
+                    ref={(node) => {
+                      recordRefs.current[idx] = node;
+                    }}
                     onClick={() => setCurrentIndex(idx)}
                     role="button"
                     tabIndex={0}
