@@ -148,15 +148,6 @@ export const UIAgent: React.FC = () => {
             className="hidden"
             onChange={(event) => handleFileInput(event.target.files)}
           />
-          {platform.isTauri() && (
-            <button
-              type="button"
-              onClick={handleTauriOpen}
-              className="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm hover:bg-slate-100"
-            >
-              Browse…
-            </button>
-          )}
         </div>
 
         <div className="flex items-center gap-2">
