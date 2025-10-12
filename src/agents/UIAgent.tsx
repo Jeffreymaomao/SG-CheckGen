@@ -173,11 +173,20 @@ export const UIAgent: React.FC = () => {
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
-      if (!records.length) return;
       const target = event.target as HTMLElement | null;
       if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) {
         return;
       }
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "p") {
+        event.preventDefault();
+        if (records.length) {
+          exportAgent.print();
+        }
+        return;
+      }
+
+      if (!records.length) return;
 
       if (event.key === "ArrowRight") {
         setCurrentIndex((prev) => Math.min(prev + 1, records.length - 1));
@@ -190,7 +199,7 @@ export const UIAgent: React.FC = () => {
 
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [records.length]);
+  }, [records.length, exportAgent]);
 
   useEffect(() => {
     if (!template || typeof window === "undefined") {
