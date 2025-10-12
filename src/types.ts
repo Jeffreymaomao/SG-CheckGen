@@ -2,7 +2,8 @@ export interface RawRecord {
   [key: string]: string | number | undefined | null;
 }
 
-export interface CheckRecord = RawRecord;
+export interface CheckRecord extends RawRecord {
+}
 
 export interface TemplateField {
   key?: string;

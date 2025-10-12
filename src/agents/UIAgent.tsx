@@ -224,7 +224,15 @@ export const UIAgent: React.FC = () => {
     }
   }, [customInputs, template, inputConfigs]);
 
-  const mustHaveFields = Array.from(new Set(template?.fields?.filter(f=>f.key)?.map(f=>f.key)??[]));
+  const mustHaveFields = useMemo(() => {
+    if (!template) {
+      return [] as string[];
+    }
+    const keys = template.fields
+      .map((field) => field.key)
+      .filter((key): key is string => Boolean(key));
+    return Array.from(new Set(keys));
+  }, [template]);
 
   return (
     <div className="flex h-full flex-col gap-4 p-4 print:p-0 print:m-0 print-no-padding-margin">
@@ -381,7 +389,7 @@ export const UIAgent: React.FC = () => {
                   <tbody className="divide-y divide-slate-100">
                     {records.map((item, idx) => (
                       <tr
-                        key={item.payee + idx}
+                        key={`record-${idx}`}
                         className={clsx("cursor-pointer", idx === currentIndex && "bg-sky-50")}
                         onClick={() => setCurrentIndex(idx)}
                       >
@@ -389,8 +397,8 @@ export const UIAgent: React.FC = () => {
                         {
                           mustHaveFields.length === 0 && <td className="px-3 py-2"></td>
                         }{
-                          mustHaveFields.length > 0 && mustHaveFields.map((field, idx) => (
-                            <td key={`${field}_${idx}`} className="px-3 py-2">{item[field]}</td>
+                          mustHaveFields.length > 0 && mustHaveFields.map((field, fieldIdx) => (
+                            <td key={`${field}_${fieldIdx}`} className="px-3 py-2">{String(item[field] ?? "")}</td>
                           ))
                         }
                       </tr>

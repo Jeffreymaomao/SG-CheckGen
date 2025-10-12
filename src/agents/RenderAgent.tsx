@@ -197,5 +197,15 @@ function resolveFieldValue(
     return "";
   }
 
-  return field.format ? applyFormat(record[key], field.format) : record[key];
+  const rawValue = record[key];
+
+  if (field.format) {
+    return applyFormat(rawValue, field.format);
+  }
+
+  if (rawValue == null) {
+    return "";
+  }
+
+  return typeof rawValue === "string" ? rawValue : String(rawValue);
 }
