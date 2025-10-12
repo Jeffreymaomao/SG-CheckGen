@@ -9,6 +9,7 @@ import { PlatformAgent } from "./PlatformAgent";
 import type { CheckRecord } from "../types";
 
 const fileAgent = new FileAgent();
+const STORAGE_PREFIX = "check-generator:template-inputs:";
 
 export const UIAgent: React.FC = () => {
   const platform = useMemo(() => new PlatformAgent(), []);
@@ -21,10 +22,33 @@ export const UIAgent: React.FC = () => {
   const [activeTemplate, setActiveTemplate] = useState(templateAgent.getActive()?.id ?? "");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [customInputs, setCustomInputs] = useState<Record<string, string>>({});
   const recordRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const templates = templateAgent.getAll();
   const template = activeTemplate ? templateAgent.setActive(activeTemplate) : templateAgent.getActive();
+  const inputConfigs = useMemo(() => {
+    if (!template) {
+      return [] as Array<{ key: string; label: string; placeholder?: string; defaultValue?: string }>;
+    }
+
+    const unique = new Map<string, { key: string; label: string; placeholder?: string; defaultValue?: string }>();
+    template.fields.forEach((field, index) => {
+      if (!field.input) {
+        return;
+      }
+      const key = `field_${index}`;
+      if (!unique.has(key)) {
+        unique.set(key, {
+          key,
+          label: field.input.label ?? field.key ?? `欄位 ${index + 1}`,
+          placeholder: field.input.placeholder,
+          defaultValue: field.input.defaultValue
+        });
+      }
+    });
+    return Array.from(unique.values());
+  }, [template]);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -36,13 +60,33 @@ export const UIAgent: React.FC = () => {
 
     if (!template) {
       styleElement?.remove();
+      setCustomInputs({});
       return;
     }
+
+    let stored: Record<string, string> = {};
+    if (typeof window !== "undefined") {
+      try {
+        const raw = window.sessionStorage.getItem(`${STORAGE_PREFIX}${template.id}`);
+        if (raw) {
+          stored = JSON.parse(raw) as Record<string, string>;
+        }
+      } catch (error) {
+        console.warn("Failed to restore template inputs", error);
+      }
+    }
+
+    const nextInputs: Record<string, string> = {};
+    inputConfigs.forEach(({ key, defaultValue }) => {
+      nextInputs[key] = stored[key] ?? defaultValue ?? "";
+    });
+    setCustomInputs(nextInputs);
+    setCurrentIndex(0);
 
     return () => {
       styleElement?.remove();
     };
-  }, [template]);
+  }, [template, inputConfigs]);
 
   const handleFileInput = async (fileList: FileList | null) => {
     if (!fileList || !fileList.length) return;
@@ -119,6 +163,25 @@ export const UIAgent: React.FC = () => {
     return () => window.removeEventListener("keydown", handleKey);
   }, [records.length]);
 
+  useEffect(() => {
+    if (!template || typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const payload: Record<string, string> = {};
+      inputConfigs.forEach(({ key, defaultValue }) => {
+        payload[key] = customInputs[key] ?? defaultValue ?? "";
+      });
+      window.sessionStorage.setItem(
+        `${STORAGE_PREFIX}${template.id}`,
+        JSON.stringify(payload)
+      );
+    } catch (error) {
+      console.warn("Failed to persist template inputs", error);
+    }
+  }, [customInputs, template, inputConfigs]);
+
   return (
     <div className="flex h-full flex-col gap-4 p-4 print:p-0 print:m-0 print-no-padding-margin">
       <header className="flex flex-wrap items-center gap-3 no-print">
@@ -127,7 +190,7 @@ export const UIAgent: React.FC = () => {
             htmlFor="file-input"
             className="cursor-pointer rounded border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-100"
           >
-            Upload Excel
+            上傳 Excel
           </label>
           <input
             id="file-input"
@@ -139,14 +202,13 @@ export const UIAgent: React.FC = () => {
         </div>
 
         <div className="relative flex items-center gap-2">
-          <span className="text-sm text-slate-500">Template</span>
+          <span className="text-sm text-slate-500">模板</span>
           <div className="relative">
             <select
               className="appearance-none rounded border border-slate-300 bg-white pl-3 pr-7 py-2 pr-8 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
               value={activeTemplate}
               onChange={(event) => {
                 setActiveTemplate(event.target.value);
-                setCurrentIndex(0);
               }}
             >
               {templates.map((item) => (
@@ -160,6 +222,29 @@ export const UIAgent: React.FC = () => {
             </span>
           </div>
         </div>
+
+        {inputConfigs.length > 0 && (
+          <div className="flex flex-wrap items-center gap-3">
+            {inputConfigs.map((input) => (
+              <label key={input.key} className="flex items-center gap-2 text-sm text-slate-600">
+                <span className="font-medium text-slate-500">{input.label}</span>
+                <input
+                  type="text"
+                  value={customInputs[input.key] ?? ""}
+                  placeholder={input.placeholder}
+                  className="w-36 rounded border border-slate-300 px-2 py-2 text-sm text-slate-700 shadow-sm focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setCustomInputs((prev) => ({
+                      ...prev,
+                      [input.key]: value
+                    }));
+                  }}
+                />
+              </label>
+            ))}
+          </div>
+        )}
 
         <div className="ml-auto flex items-center gap-2">
           <button
@@ -216,7 +301,12 @@ export const UIAgent: React.FC = () => {
                       }
                     }}
                   >
-                    <RenderAgent template={template} record={item} pageIndex={idx} />
+                    <RenderAgent
+                      template={template}
+                      record={item}
+                      pageIndex={idx}
+                      customInputs={customInputs}
+                    />
                   </div>
                 ))}
               </div>
@@ -227,6 +317,9 @@ export const UIAgent: React.FC = () => {
                 <table className="min-w-full divide-y divide-slate-200 text-left text-xs text-slate-600">
                   <thead className="bg-slate-100 text-[11px] uppercase tracking-wide text-slate-500">
                     <tr>
+                      {
+                        // console.log(records)
+                      }
                       <th className="px-3 py-2">#</th>
                       <th className="px-3 py-2">Payee</th>
                       <th className="px-3 py-2">Amount</th>

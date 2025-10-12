@@ -2,15 +2,7 @@ export interface RawRecord {
   [key: string]: string | number | undefined | null;
 }
 
-export interface CheckRecord {
-  payee: string;
-  amount: number;
-  amountFormatted: string;
-  amountCjk: string;
-  date: string;
-  memo?: string;
-  original: RawRecord;
-}
+export interface CheckRecord = RawRecord;
 
 export interface TemplateField {
   key?: string;
@@ -21,6 +13,12 @@ export interface TemplateField {
   align?: "left" | "right" | "center";
   format?: string;
   static?: string;
+  input?: {
+    key?: string;
+    label?: string;
+    placeholder?: string;
+    defaultValue?: string;
+  };
   fontSize?: number;
   fontWeight?: number;
   fill?: string;

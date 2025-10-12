@@ -2,7 +2,7 @@ import React, { useLayoutEffect } from "react";
 import type { CheckRecord, CheckTemplate, TemplateField } from "../types";
 import { applyFormat } from "../utils/formatValue";
 
-function usePrintPageSize(width: number, height: number, unit: "mm" | "in" | "cm") {
+function usePrintPageSize(width: number, height: number, unit: "mm" | "in" | "cm" | "px") {
   useLayoutEffect(() => {
     const id = "PRINT_PAGE_SIZE_STYLE";
     let el = document.getElementById(id) as HTMLStyleElement | null;
@@ -30,13 +30,15 @@ export interface RenderAgentProps {
   record: CheckRecord;
   pageIndex: number;
   editMode?: boolean;
+  customInputs?: Record<string, string>;
 }
 
 export const RenderAgent: React.FC<RenderAgentProps> = ({
   template,
   record,
   pageIndex,
-  editMode
+  editMode,
+  customInputs
 }) => {
   const { page } = template;
   const unit = page.unit ?? "mm";
@@ -103,15 +105,22 @@ export const RenderAgent: React.FC<RenderAgentProps> = ({
           return null;
         })}
 
-        {template.fields.map((field, idx) => (
-          <FieldText
-            key={field.key ?? field.static ?? idx}
-            field={field}
-            template={template}
-            record={record}
-            editMode={editMode}
-          />
-        ))}
+        {template.fields.map((field, idx) => {
+          const inputKey = field.input
+            ? field.input.key ?? field.key ?? `field_${idx}`
+            : undefined;
+          return (
+            <FieldText
+              key={idx}
+              field={field}
+              template={template}
+              record={record}
+              editMode={editMode}
+              customInputs={customInputs}
+              inputKey={inputKey}
+            />
+          );
+        })}
       </svg>
     </div>
   );
@@ -122,10 +131,12 @@ interface FieldProps {
   template: CheckTemplate;
   record: CheckRecord;
   editMode?: boolean;
+  customInputs?: Record<string, string>;
+  inputKey?: string;
 }
 
-const FieldText: React.FC<FieldProps> = ({ field, template, record, editMode }) => {
-  const text = resolveFieldValue(field, record);
+const FieldText: React.FC<FieldProps> = ({ field, template, record, editMode, customInputs, inputKey }) => {
+  const text = resolveFieldValue(field, record, customInputs, inputKey);
   const width = field.w ?? 0;
   const anchor = field.align === "right" ? "end" : field.align === "center" ? "middle" : "start";
   const x = field.align === "right" ? field.x + width : field.align === "center"
@@ -166,7 +177,17 @@ const FieldText: React.FC<FieldProps> = ({ field, template, record, editMode }) 
   );
 };
 
-function resolveFieldValue(field: TemplateField, record: CheckRecord): string {
+function resolveFieldValue(
+  field: TemplateField,
+  record: CheckRecord,
+  customInputs?: Record<string, string>,
+  inputKey?: string
+): string {
+  if (field.input) {
+    const key = inputKey ?? field.input.key ?? field.key ?? "";
+    return customInputs?.[key] ?? field.input.defaultValue ?? "";
+  }
+
   if (field.static != null) {
     return field.static;
   }
@@ -176,20 +197,5 @@ function resolveFieldValue(field: TemplateField, record: CheckRecord): string {
     return "";
   }
 
-  switch (key) {
-    case "payee":
-      return record.payee;
-    case "amount":
-      return record.amountFormatted;
-    case "amount_cn":
-      return record.amountCjk;
-    case "date":
-      return field.format ? applyFormat(record.date, field.format) : record.date;
-    case "memo":
-      return record.memo ?? "";
-    default: {
-      const original = record.original[key];
-      return applyFormat(original, field.format);
-    }
-  }
+  return field.format ? applyFormat(record[key], field.format) : record[key];
 }
