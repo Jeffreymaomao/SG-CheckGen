@@ -90,5 +90,8 @@ Both builds embed fonts, icons, and templates locally to maintain offline behavi
 - Native print enhancements and additional export formats (e.g., PDF generator) via Tauri commands.
 - Extended data normalization inside `DataAgent` (mapping, validation, locale-aware formatting).
 
-Contributions and feedback are welcome—use AGENTS.md as the authoritative guide when extending agents or adding platform-specific capabilities.
+## Copyright
 
+© 2025 Chang-Mao. All rights reserved.
+This repository is publicly accessible for demonstration purposes only.
+Unauthorized use, modification, or distribution is prohibited.
