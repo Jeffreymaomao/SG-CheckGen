@@ -15,3 +15,56 @@ body {
 * {
   font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Noto Sans", sans-serif;
 }
+
+@media print {
+  * {
+    transform: none !important;
+    -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+  }
+  @page {
+    size: A4 portrait !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: none !important;
+  }
+
+  .print-page {
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .print-no-padding-margin {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .records-strip {
+    display: block !important;
+  }
+
+  .records-page {
+    display: block !important;
+    overflow: visible !important;
+    transform: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .records-page:nth-child(odd) {
+    border-bottom: 1px dashed gray !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

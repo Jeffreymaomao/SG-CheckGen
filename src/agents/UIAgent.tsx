@@ -39,18 +39,6 @@ export const UIAgent: React.FC = () => {
       return;
     }
 
-    const unit = template.page.unit ?? "mm";
-    const margin = template.page.margin ?? 0;
-    const css = `@media print {\n  @page {\n    size: ${template.page.width}${unit} ${template.page.height}${unit};\n    margin: ${margin}${unit};\n  }\n}`;
-
-    if (!styleElement) {
-      styleElement = document.createElement("style");
-      styleElement.id = styleId;
-      document.head.appendChild(styleElement);
-    }
-
-    styleElement.textContent = css;
-
     return () => {
       styleElement?.remove();
     };
@@ -132,7 +120,7 @@ export const UIAgent: React.FC = () => {
   }, [records.length]);
 
   return (
-    <div className="flex h-full flex-col gap-4 p-4 print-no-padding-margin">
+    <div className="flex h-full flex-col gap-4 p-4 print:p-0 print:m-0 print-no-padding-margin">
       <header className="flex flex-wrap items-center gap-3 no-print">
         <div className="flex items-center gap-2">
           <label
@@ -196,7 +184,7 @@ export const UIAgent: React.FC = () => {
         </div>
       )}
 
-      <section className="flex-1 overflow-visible overflow-y-auto rounded border border-slate-200 bg-white print-no-padding-margin" id="preview-container">
+      <section className="flex-1 overflow-visible overflow-y-auto rounded border border-slate-200 bg-white print:p-0 print:m-0 print:border-none print-no-padding-margin" id="preview-container">
         {loading && <p className="text-sm text-slate-500">Parsing workbook…</p>}
         {!loading && !hasRecords && (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-slate-500">
@@ -205,13 +193,14 @@ export const UIAgent: React.FC = () => {
           </div>
         )}
         {!loading && hasRecords && template && (
-          <div className="flex flex-col gap-2 px-0 py-4">
-            <div className="records-scroll overflow-x-auto px-10 pb-2 print-no-padding-margin">
-              <div className="records-strip flex flex-nowrap px-0 py-4 gap-6 print-no-padding-margin print:flex-wrap">
+          <div className="flex flex-col gap-2 px-0 py-4 print:p-0 print:m-0 print:border-none print-no-padding-margin">
+            <div className="records-scroll overflow-x-auto px-10 pb-2 print:p-0 print:m-0 print:border-none print-no-padding-margin">
+              <div className="records-strip flex flex-nowrap px-0 py-4 gap-6 print:p-0 print:m-0 print:border-none print-no-padding-margin print:gap-0 print:flex-wrap">
                 {records.map((item, idx) => (
                   <div
                     key={`${item.payee}-${idx}`}
-                    className={clsx("records-page shrink-0 border-transparent border transition print-no-padding-margin",
+                    className={clsx("print-even-break records-page shrink-0 border-transparent border transition",
+                      "print:ring-0 print:ring-transparent print:ring-offset-0 print:shadow-none print:p-0 print:m-0 print-no-padding-margin",
                       idx === currentIndex && "ring-blue-400 ring-2"
                     )}
                     ref={(node) => {

@@ -11,43 +11,14 @@ function usePrintPageSize(width: number, height: number, unit: "mm" | "in" | "cm
       el.id = id;
       document.head.appendChild(el);
     }
-    console.log(`size: ${width}${unit} ${height}${unit};`);
     el.textContent = `
       @media print {
-        * {
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-          transform: none !important;
-        }
-        @page {
-          size: ${width}${unit} ${height}${unit};
-          margin: 0;
-        }
         html, body {
-          height: auto !important;
-          overflow: visible !important;
+          width: ${width}${unit} !important;
         }
         .print-page {
           width: ${width}${unit} !important;
           height: ${height}${unit} !important;
-          margin: 0 !important;
-          box-shadow: none !important;
-          border: none !important;
-          // page-break-after: always;
-        }
-        svg.print-svg {
-          width: ${width}${unit} !important;
-          height: ${height}${unit} !important;
-        }
-        .no-print {
-          display: none !important;
-        }
-        .print-no-padding-margin {
-          padding: 0 !important;
-          margin: 0 !important;
-          border: none !important;
-          outline: none !important;
-          gap: 0 !important;
         }
       }
     `;
