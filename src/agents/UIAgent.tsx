@@ -6,7 +6,7 @@ import { TemplateAgent } from "./TemplateAgent";
 import { RenderAgent } from "./RenderAgent";
 import { ExportAgent } from "./ExportAgent";
 import { PlatformAgent } from "./PlatformAgent";
-import type { CheckRecord } from "../types";
+import type { CheckRecord, WorkbookSheet } from "../types";
 
 const fileAgent = new FileAgent();
 const STORAGE_PREFIX = "check-generator:template-inputs:";
@@ -20,6 +20,8 @@ export const UIAgent: React.FC = () => {
   const [records, setRecords] = useState<CheckRecord[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [activeTemplate, setActiveTemplate] = useState(templateAgent.getActive()?.id ?? "");
+  const [sheets, setSheets] = useState<WorkbookSheet[]>([]);
+  const [activeSheetIndex, setActiveSheetIndex] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [customInputs, setCustomInputs] = useState<Record<string, string>>({});
@@ -29,6 +31,8 @@ export const UIAgent: React.FC = () => {
 
   const templates = templateAgent.getAll();
   const template = activeTemplate ? templateAgent.setActive(activeTemplate) : templateAgent.getActive();
+  const activeSheet = sheets[activeSheetIndex] ?? sheets[0];
+  const sheetHeaders = activeSheet?.headers ?? [];
   const inputConfigs = useMemo(() => {
     if (!template) {
       return [] as Array<{ key: string; label: string; placeholder?: string; defaultValue?: string }>;
@@ -121,16 +125,19 @@ export const UIAgent: React.FC = () => {
     if (!fileList || !fileList.length) return;
     setLoading(true);
     try {
+      setSheets([]);
+      setRecords([]);
+      setErrors([]);
       const buffer = await fileList[0].arrayBuffer();
       const safeInput: File | ArrayBuffer | Uint8Array = buffer instanceof ArrayBuffer ? buffer : new Uint8Array(buffer);
-      const { records: rawRecords } = await fileAgent.parse(safeInput);
-      const result = dataAgent.normalize(rawRecords);
-      setRecords(result.records);
-      setErrors(result.errors);
-      setCurrentIndex(0);
+      const { sheets: parsedSheets } = await fileAgent.parse(safeInput);
+      setSheets(parsedSheets);
+      setActiveSheetIndex(0);
     } catch (error) {
       setErrors([error instanceof Error ? error.message : "Failed to parse file"]);
       setRecords([]);
+      setSheets([]);
+      setActiveSheetIndex(0);
     } finally {
       setLoading(false);
     }
@@ -139,24 +146,52 @@ export const UIAgent: React.FC = () => {
   const handleTauriOpen = async () => {
     setLoading(true);
     try {
+      setSheets([]);
+      setRecords([]);
+      setErrors([]);
       const binary = await platform.openFileDialog();
       if (!binary) return;
       const view = new Uint8Array(binary.buffer, binary.byteOffset, binary.byteLength);
       const ab = new ArrayBuffer(view.byteLength);
       new Uint8Array(ab).set(view);
 
-      const { records: rawRecords } = await fileAgent.parse(ab);
-      const result = dataAgent.normalize(rawRecords);
-      setRecords(result.records);
-      setErrors(result.errors);
-      setCurrentIndex(0);
+      const { sheets: parsedSheets } = await fileAgent.parse(ab);
+      setSheets(parsedSheets);
+      setActiveSheetIndex(0);
     } catch (error) {
       setErrors([error instanceof Error ? error.message : "Failed to read file"]);
       setRecords([]);
+      setSheets([]);
+      setActiveSheetIndex(0);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!sheets.length) {
+      setRecords([]);
+      setErrors([]);
+      return;
+    }
+
+    const sheet = sheets[activeSheetIndex] ?? sheets[0];
+    if (!sheet) {
+      setRecords([]);
+      setErrors([]);
+      return;
+    }
+
+    const result = dataAgent.normalize(sheet.records);
+    const sheetHasRows = sheet.records.length > 0;
+    const nextErrors = [...result.errors];
+    if (!sheetHasRows) {
+      nextErrors.push("選擇的工作表沒有資料列。");
+    }
+    setRecords(result.records);
+    setErrors(nextErrors);
+    setCurrentIndex(0);
+  }, [sheets, activeSheetIndex, dataAgent]);
 
   const hasRecords = records.length > 0;
 
@@ -275,6 +310,30 @@ export const UIAgent: React.FC = () => {
           </div>
         </div>
 
+        {sheets.length > 0 && (
+          <div className="relative flex items-center gap-2">
+            <span className="text-sm text-slate-500">工作表</span>
+            <div className="relative">
+              <select
+                className="appearance-none rounded border border-slate-300 bg-white pl-3 pr-7 py-2 pr-8 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                value={String(activeSheetIndex)}
+                onChange={(event) => {
+                  setActiveSheetIndex(Number(event.target.value));
+                }}
+              >
+                {sheets.map((sheet, index) => (
+                  <option key={`${sheet.name}-${index}`} value={index}>
+                    {sheet.name || `Sheet ${index + 1}`}
+                  </option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute right-3.5 top-5 -translate-y-1/2 text-slate-400 text-xs">
+                ▼
+              </span>
+            </div>
+          </div>
+        )}
+
         {inputConfigs.length > 0 && (
           <div className="flex flex-wrap items-center gap-3">
             {inputConfigs.map((input) => (
@@ -342,7 +401,7 @@ export const UIAgent: React.FC = () => {
               <div className="records-strip flex flex-nowrap px-0 py-4 gap-6 print:p-0 print:m-0 print:border-none print-no-padding-margin print:gap-0 print:flex-wrap">
                 {records.map((item, idx) => (
                   <div
-                    key={`${item.payee}-${idx}`}
+                    key={`record-card-${idx}`}
                     className={clsx("print-even-break records-page shrink-0 border-transparent border transition",
                       "print:ring-0 print:ring-transparent print:ring-offset-0 print:shadow-none print:p-0 print:m-0 print-no-padding-margin",
                       idx === currentIndex && "ring-blue-400 ring-2"
@@ -378,10 +437,10 @@ export const UIAgent: React.FC = () => {
                     <tr>
                       <th className="px-3 py-2">#</th>
                       {
-                        mustHaveFields.length === 0 && <th className="px-3 py-2"></th>
+                        sheetHeaders.length === 0 && <th className="px-3 py-2"></th>
                       }{
-                        mustHaveFields.length > 0 && mustHaveFields.map((field, idx) => (
-                          <th key={idx} className="px-3 py-2">{field}</th>
+                        sheetHeaders.length > 0 && sheetHeaders.map((header, idx) => (
+                          <th key={`${header}-${idx}`} className="px-3 py-2">{header}</th>
                         ))
                       }
                     </tr>
@@ -395,10 +454,10 @@ export const UIAgent: React.FC = () => {
                       >
                         <td className="px-3 py-2 font-medium text-slate-700">{idx + 1}</td>
                         {
-                          mustHaveFields.length === 0 && <td className="px-3 py-2"></td>
+                          sheetHeaders.length === 0 && <td className="px-3 py-2"></td>
                         }{
-                          mustHaveFields.length > 0 && mustHaveFields.map((field, fieldIdx) => (
-                            <td key={`${field}_${fieldIdx}`} className="px-3 py-2">{String(item[field] ?? "")}</td>
+                          sheetHeaders.length > 0 && sheetHeaders.map((header, fieldIdx) => (
+                            <td key={`${header}_${fieldIdx}`} className="px-3 py-2">{String(item[header] ?? "")}</td>
                           ))
                         }
                       </tr>

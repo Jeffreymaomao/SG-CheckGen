@@ -1,4 +1,4 @@
-import type { FileParseResult, RawRecord } from "../types";
+import type { FileParseResult, RawRecord, WorkbookSheet } from "../types";
 import { read, utils } from "xlsx";
 
 export class FileAgent {
@@ -7,18 +7,23 @@ export class FileAgent {
     const workbook = read(buffer, { type: "array" });
 
     if (!workbook.SheetNames.length) {
-      return { records: [], headers: [] };
+      return { sheets: [] };
     }
 
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = utils.sheet_to_json<RawRecord>(sheet, { defval: "" });
-    const headerRow = utils.sheet_to_json<string[]>(sheet, { header: 1, defval: "" });
-    const headers = Array.isArray(headerRow[0]) ? (headerRow[0] as string[]) : [];
+    const sheets: WorkbookSheet[] = workbook.SheetNames.map((name) => {
+      const worksheet = workbook.Sheets[name];
+      const rows = utils.sheet_to_json<RawRecord>(worksheet, { defval: "" });
+      const headerRow = utils.sheet_to_json<string[]>(worksheet, { header: 1, defval: "" });
+      const headers = Array.isArray(headerRow[0]) ? (headerRow[0] as string[]) : [];
 
-    return {
-      records: rows,
-      headers
-    };
+      return {
+        name,
+        headers,
+        records: rows
+      };
+    });
+
+    return { sheets };
   }
 
   private async toArrayBuffer(input: File | ArrayBuffer | Uint8Array): Promise<ArrayBuffer> {

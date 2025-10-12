@@ -74,7 +74,12 @@ export interface CheckTemplate {
   decor?: TemplateDecor[];
 }
 
-export interface FileParseResult {
-  records: RawRecord[];
+export interface WorkbookSheet {
+  name: string;
   headers: string[];
+  records: RawRecord[];
+}
+
+export interface FileParseResult {
+  sheets: WorkbookSheet[];
 }
