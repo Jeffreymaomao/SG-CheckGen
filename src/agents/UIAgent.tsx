@@ -150,22 +150,27 @@ export const UIAgent: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center gap-2">
           <span className="text-sm text-slate-500">Template</span>
-          <select
-            className="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm"
-            value={activeTemplate}
-            onChange={(event) => {
-              setActiveTemplate(event.target.value);
-              setCurrentIndex(0);
-            }}
-          >
-            {templates.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.label}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              className="appearance-none rounded border border-slate-300 bg-white pl-3 pr-7 py-2 pr-8 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+              value={activeTemplate}
+              onChange={(event) => {
+                setActiveTemplate(event.target.value);
+                setCurrentIndex(0);
+              }}
+            >
+              {templates.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-3.5 top-5 -translate-y-1/2 text-slate-400 text-xs">
+              ▼
+            </span>
+          </div>
         </div>
 
         <div className="ml-auto flex items-center gap-2">

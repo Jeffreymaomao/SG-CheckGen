@@ -3,7 +3,7 @@
   "build": {
     "beforeBuildCommand": "npm run build",
     "beforeDevCommand": "npm run dev",
-    "devPath": "http://localhost:4173",
+    "devPath": "http://localhost:5174",
     "distDir": "../dist"
   },
   "package": {
@@ -12,7 +12,10 @@
   },
   "tauri": {
     "allowlist": {
-      "all": false
+      "all": false,
+      "window": {
+        "print": true
+      }
     },
     "bundle": {
       "active": true,

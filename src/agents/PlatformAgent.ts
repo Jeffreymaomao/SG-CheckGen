@@ -22,8 +22,4 @@ export class PlatformAgent {
   invokePrint(): void {
     window.print();
   }
-
-  async exportPdf(_elementId: string): Promise<void> {
-    console.warn("PDF export not implemented yet");
-  }
 }

@@ -9,6 +9,9 @@ body,
 }
 
 body {
-  font-family: 'Noto Sans TC', 'Noto Sans', sans-serif;
   background-color: #f8fafc;
+}
+
+* {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Noto Sans", sans-serif;
 }

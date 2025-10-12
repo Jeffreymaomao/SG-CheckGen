@@ -32,7 +32,7 @@ function toDayjsInput(v: unknown): string | number | Date | Dayjs | undefined {
   if (v instanceof Date) return v;
   if (typeof v === "number") return v;
   if (typeof v === "string" && v.trim() !== "") return v;
-  return undefined; // {}, [], 其他雜項一律丟掉，避免 dayjs(undefined) 變成 now
+  return undefined;
 }
 
 export class DataAgent {

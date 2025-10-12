@@ -1,6 +1,58 @@
-import React from "react";
+import React, { useLayoutEffect } from "react";
 import type { CheckRecord, CheckTemplate, TemplateField } from "../types";
 import { applyFormat } from "../utils/formatValue";
+
+function usePrintPageSize(width: number, height: number, unit: "mm" | "in" | "cm") {
+  useLayoutEffect(() => {
+    const id = "PRINT_PAGE_SIZE_STYLE";
+    let el = document.getElementById(id) as HTMLStyleElement | null;
+    if (!el) {
+      el = document.createElement("style");
+      el.id = id;
+      document.head.appendChild(el);
+    }
+    console.log(`size: ${width}${unit} ${height}${unit};`);
+    el.textContent = `
+      @media print {
+        * {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+          transform: none !important;
+        }
+        @page {
+          size: ${width}${unit} ${height}${unit};
+          margin: 0;
+        }
+        html, body {
+          height: auto !important;
+          overflow: visible !important;
+        }
+        .print-page {
+          width: ${width}${unit} !important;
+          height: ${height}${unit} !important;
+          margin: 0 !important;
+          box-shadow: none !important;
+          border: none !important;
+          // page-break-after: always;
+        }
+        svg.print-svg {
+          width: ${width}${unit} !important;
+          height: ${height}${unit} !important;
+        }
+        .no-print {
+          display: none !important;
+        }
+        .print-no-padding-margin {
+          padding: 0 !important;
+          margin: 0 !important;
+          border: none !important;
+          outline: none !important;
+          gap: 0 !important;
+        }
+      }
+    `;
+  }, [width, height, unit]);
+}
 
 export interface RenderAgentProps {
   template: CheckTemplate;
@@ -17,6 +69,7 @@ export const RenderAgent: React.FC<RenderAgentProps> = ({
 }) => {
   const { page } = template;
   const unit = page.unit ?? "mm";
+  usePrintPageSize(template.page.width, template.page.height, template.page.unit ?? "mm");
 
   return (
     <div
