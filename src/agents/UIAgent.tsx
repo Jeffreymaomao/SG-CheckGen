@@ -24,6 +24,8 @@ export const UIAgent: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [customInputs, setCustomInputs] = useState<Record<string, string>>({});
   const recordRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const inputsHydratedRef = useRef(false);
+  const hydrationTimerRef = useRef<number | null>(null);
 
   const templates = templateAgent.getAll();
   const template = activeTemplate ? templateAgent.setActive(activeTemplate) : templateAgent.getActive();
@@ -37,7 +39,7 @@ export const UIAgent: React.FC = () => {
       if (!field.input) {
         return;
       }
-      const key = `field_${index}`;
+      const key = field.input.key ?? field.key ?? `field_${index}`;
       if (!unique.has(key)) {
         unique.set(key, {
           key,
@@ -61,13 +63,18 @@ export const UIAgent: React.FC = () => {
     if (!template) {
       styleElement?.remove();
       setCustomInputs({});
+      inputsHydratedRef.current = false;
+      if (hydrationTimerRef.current != null && typeof window !== "undefined") {
+        window.clearTimeout(hydrationTimerRef.current);
+        hydrationTimerRef.current = null;
+      }
       return;
     }
 
     let stored: Record<string, string> = {};
     if (typeof window !== "undefined") {
       try {
-        const raw = window.sessionStorage.getItem(`${STORAGE_PREFIX}${template.id}`);
+        const raw = window.localStorage.getItem(`${STORAGE_PREFIX}${template.id}`);
         if (raw) {
           stored = JSON.parse(raw) as Record<string, string>;
         }
@@ -80,13 +87,35 @@ export const UIAgent: React.FC = () => {
     inputConfigs.forEach(({ key, defaultValue }) => {
       nextInputs[key] = stored[key] ?? defaultValue ?? "";
     });
+    inputsHydratedRef.current = false;
+    if (hydrationTimerRef.current != null && typeof window !== "undefined") {
+      window.clearTimeout(hydrationTimerRef.current);
+      hydrationTimerRef.current = null;
+    }
     setCustomInputs(nextInputs);
+    if (typeof window !== "undefined") {
+      hydrationTimerRef.current = window.setTimeout(() => {
+        inputsHydratedRef.current = true;
+        hydrationTimerRef.current = null;
+      }, 0);
+    } else {
+      inputsHydratedRef.current = true;
+    }
     setCurrentIndex(0);
 
     return () => {
       styleElement?.remove();
     };
   }, [template, inputConfigs]);
+
+  useEffect(() => {
+    return () => {
+      if (hydrationTimerRef.current != null && typeof window !== "undefined") {
+        window.clearTimeout(hydrationTimerRef.current);
+        hydrationTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const handleFileInput = async (fileList: FileList | null) => {
     if (!fileList || !fileList.length) return;
@@ -168,12 +197,16 @@ export const UIAgent: React.FC = () => {
       return;
     }
 
+    if (!inputsHydratedRef.current) {
+      return;
+    }
+
     try {
       const payload: Record<string, string> = {};
       inputConfigs.forEach(({ key, defaultValue }) => {
         payload[key] = customInputs[key] ?? defaultValue ?? "";
       });
-      window.sessionStorage.setItem(
+      window.localStorage.setItem(
         `${STORAGE_PREFIX}${template.id}`,
         JSON.stringify(payload)
       );
@@ -181,6 +214,8 @@ export const UIAgent: React.FC = () => {
       console.warn("Failed to persist template inputs", error);
     }
   }, [customInputs, template, inputConfigs]);
+
+  const mustHaveFields = Array.from(new Set(template?.fields?.filter(f=>f.key)?.map(f=>f.key)??[]));
 
   return (
     <div className="flex h-full flex-col gap-4 p-4 print:p-0 print:m-0 print-no-padding-margin">
@@ -253,7 +288,7 @@ export const UIAgent: React.FC = () => {
             onClick={() => exportAgent.print()}
             disabled={!hasRecords}
           >
-            Print
+            列印 / 存檔
           </button>
         </div>
       </header>
@@ -273,8 +308,15 @@ export const UIAgent: React.FC = () => {
         {loading && <p className="text-sm text-slate-500">Parsing workbook…</p>}
         {!loading && !hasRecords && (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-slate-500">
-            <p>Upload an Excel worksheet to preview printable checks.</p>
-            <p>Ensure columns include payee, amount, date, and memo.</p>
+            <p>上傳 Excel 工作表，以預覽列印支票，</p>
+            <p>並確保標題名包含{' '}
+              {mustHaveFields.map((f, i) => (
+                <React.Fragment key={i}>
+                  <span className="border border-black p-1 rounded mx-1 bg-green-100 font-mono text-slate-700">{f}</span>
+                  {i !== mustHaveFields.length - 1 && '、'}
+                </React.Fragment>
+              ))}。
+            </p>
           </div>
         )}
         {!loading && hasRecords && template && (
@@ -312,20 +354,19 @@ export const UIAgent: React.FC = () => {
               </div>
             </div>
             <details className="w-90% rounded border border-slate-200 bg-slate-50 mx-4 p-3 text-sm no-print">
-              <summary className="cursor-pointer font-medium text-slate-700">Parsed Records Preview</summary>
+              <summary className="cursor-pointer font-medium text-slate-700">已解析 Excel 預覽</summary>
               <div className="mt-3 max-h-48 overflow-auto rounded border border-slate-200 bg-white">
                 <table className="min-w-full divide-y divide-slate-200 text-left text-xs text-slate-600">
-                  <thead className="bg-slate-100 text-[11px] uppercase tracking-wide text-slate-500">
+                  <thead className="bg-slate-100 text-[11px] tracking-wide text-slate-500">
                     <tr>
-                      {
-                        // console.log(records)
-                      }
                       <th className="px-3 py-2">#</th>
-                      <th className="px-3 py-2">Payee</th>
-                      <th className="px-3 py-2">Amount</th>
-                      <th className="px-3 py-2">Amount (Upper)</th>
-                      <th className="px-3 py-2">Date</th>
-                      <th className="px-3 py-2">Memo</th>
+                      {
+                        mustHaveFields.length === 0 && <th className="px-3 py-2"></th>
+                      }{
+                        mustHaveFields.length > 0 && mustHaveFields.map((field, idx) => (
+                          <th key={idx} className="px-3 py-2">{field}</th>
+                        ))
+                      }
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -336,11 +377,13 @@ export const UIAgent: React.FC = () => {
                         onClick={() => setCurrentIndex(idx)}
                       >
                         <td className="px-3 py-2 font-medium text-slate-700">{idx + 1}</td>
-                        <td className="px-3 py-2">{item.payee}</td>
-                        <td className="px-3 py-2">{item.amountFormatted}</td>
-                        <td className="px-3 py-2">{item.amountCjk}</td>
-                        <td className="px-3 py-2">{item.date}</td>
-                        <td className="px-3 py-2">{item.memo ?? ""}</td>
+                        {
+                          mustHaveFields.length === 0 && <td className="px-3 py-2"></td>
+                        }{
+                          mustHaveFields.length > 0 && mustHaveFields.map((field, idx) => (
+                            <td key={`${field}_${idx}`} className="px-3 py-2">{item[field]}</td>
+                          ))
+                        }
                       </tr>
                     ))}
                   </tbody>

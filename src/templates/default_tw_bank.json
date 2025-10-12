@@ -4,7 +4,7 @@
   "page": { "unit": "mm", "width": 210, "height": 147, "margin": 3 },
   "font": { "family": "Noto Sans TC", "size": 10, "weight": 500 },
   "fields": [
-    { "x": 8,  "y": 8,   "align": "left",   "fontSize": 4,   "fontWeight": 400, "input": {"label": "月份","placeholder": "請輸入月份"}},
+    { "x": 8,  "y": 8,   "align": "left",   "fontSize": 4,   "fontWeight": 400, "input": {"key": "header_month", "label": "月份","placeholder": "請輸入月份"}},
     { "x": 53,  "y": 15, "align": "left",   "fontSize": 6,   "fontWeight": 400, "static": "尚谷營造有限公司"},
     { "x": 53,  "y": 23, "align": "left",   "fontSize": 6,   "fontWeight": 400, "static": "尚谷工程有限公司"},
     { "x": 120, "y": 15, "align": "left",   "fontSize": 4.3, "fontWeight": 400, "static": "新北市泰山區明志路三段478號6F-3"},
@@ -16,7 +16,7 @@
     { "x": 25, "y": 60,  "align": "center", "fontSize": 5, "fontWeight": 400, "static": "支票號碼"},
     { "x": 70, "y": 60,  "align": "center", "fontSize": 5, "fontWeight": 400, "key":    "check_id"},
     { "x": 25, "y": 70,  "align": "center", "fontSize": 5, "fontWeight": 400, "static": "到期日"},
-    { "x": 70, "y": 70,  "align": "center", "fontSize": 5, "fontWeight": 400, "input": {"label": "到期日","placeholder": "請輸入到期日"}},
+    { "x": 70, "y": 70,  "align": "center", "fontSize": 5, "fontWeight": 400, "input": {"key": "due_date", "label": "到期日","placeholder": "請輸入到期日"}},
     { "x": 25, "y": 80,  "align": "center", "fontSize": 5, "fontWeight": 400, "static": "憑票支付"},
     { "x": 70, "y": 80,  "align": "center", "fontSize": 5, "fontWeight": 400, "key":    "payee"},
     { "x": 25, "y": 90,  "align": "center", "fontSize": 5, "fontWeight": 400, "static": "新臺幣"},
