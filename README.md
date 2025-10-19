@@ -48,6 +48,14 @@ During development the Tauri shell proxies the Vite dev server (`http://localhos
 
 Both builds embed fonts, icons, and templates locally to maintain offline behavior.
 
+## Deploying to GitHub Pages
+1. Make sure `vite.config.ts` sets `base` to `"/your-repo-name/"` so assets resolve correctly.
+2. Install the deployment helper (already added in this project): `npm install --save-dev gh-pages`.
+3. Build the site locally: `npm run build` (outputs to `dist/`).
+4. Publish to Pages: `npx gh-pages -d dist`. This pushes the bundle to the `gh-pages` branch for GitHub Pages to serve.
+
+For automated deploys, add a GitHub Actions workflow that runs the same build step on every push and publishes `dist/` to `gh-pages` on your behalf.
+
 ## Using the App
 1. Launch the web app or desktop build.
 2. Click **上傳 Excel** and choose an `.xlsx` file. The first worksheet is parsed; the header row defines column names.
