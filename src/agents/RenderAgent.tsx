@@ -2,7 +2,7 @@ import React, { useLayoutEffect } from "react";
 import dayjs from "dayjs";
 import type { CheckRecord, CheckTemplate, TemplateField } from "../types";
 import { applyFormat } from "../utils/formatValue";
-import utc from 'dayjs/plugin/utc';
+import utc from "dayjs/plugin/utc";
 
 dayjs.extend(utc);
 
@@ -10,12 +10,12 @@ export function parseExcelDate(
   serial: number,
   opts?: { date1904?: boolean }   // 若活頁簿使用 1904 系統，傳入 { date1904: true }
 ): dayjs.Dayjs {
-  if (!Number.isFinite(serial)) return dayjs.invalid();
+  if (!Number.isFinite(serial)) return dayjs(NaN);
 
   const is1904 = !!opts?.date1904;
 
   // Excel 1900 系統的閏年 bug：序號 60 = 假的 1900-02-29
-  if (!is1904 && serial === 60) return dayjs.invalid();
+  if (!is1904 && serial === 60) return dayjs(NaN);
 
   const dayMs = 86400000;
 
@@ -28,7 +28,7 @@ export function parseExcelDate(
   const corrected = (!is1904 && serial > 60) ? serial - 1 : serial;
 
   const ms = epochUTC + corrected * dayMs;
-  return dayjs.utc(ms);  // 用 UTC 避免本地時區/DST 影響
+  return dayjs.utc(ms).local();  // 轉回本地時區輸出
 }
 
 function usePrintPageSize(width: number, height: number, unit: "mm" | "in" | "cm" | "px") {
