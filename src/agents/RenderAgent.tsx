@@ -1,6 +1,35 @@
 import React, { useLayoutEffect } from "react";
+import dayjs from "dayjs";
 import type { CheckRecord, CheckTemplate, TemplateField } from "../types";
 import { applyFormat } from "../utils/formatValue";
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
+
+export function parseExcelDate(
+  serial: number,
+  opts?: { date1904?: boolean }   // 若活頁簿使用 1904 系統，傳入 { date1904: true }
+): dayjs.Dayjs {
+  if (!Number.isFinite(serial)) return dayjs.invalid();
+
+  const is1904 = !!opts?.date1904;
+
+  // Excel 1900 系統的閏年 bug：序號 60 = 假的 1900-02-29
+  if (!is1904 && serial === 60) return dayjs.invalid();
+
+  const dayMs = 86400000;
+
+  // 正確的 epoch：
+  //  - 1900 系統：1899-12-31（序號 1 = 1900-01-01）
+  //  - 1904 系統：1904-01-01（序號 0 = 1904-01-01）
+  const epochUTC = is1904 ? Date.UTC(1904, 0, 1) : Date.UTC(1899, 11, 31);
+
+  // 1900 系統且序號 > 60 時，要扣掉假的 2/29
+  const corrected = (!is1904 && serial > 60) ? serial - 1 : serial;
+
+  const ms = epochUTC + corrected * dayMs;
+  return dayjs.utc(ms);  // 用 UTC 避免本地時區/DST 影響
+}
 
 function usePrintPageSize(width: number, height: number, unit: "mm" | "in" | "cm" | "px") {
   useLayoutEffect(() => {
@@ -198,6 +227,37 @@ function resolveFieldValue(
   }
 
   const rawValue = record[key];
+
+  if (field.type === "date") {
+    if (rawValue == null || rawValue === "") {
+      return "";
+    }
+
+    let parsed: dayjs.Dayjs;
+    if (typeof rawValue === "number") {
+      parsed = parseExcelDate(rawValue);
+    } else if (typeof rawValue === "string") {
+      const trimmed = rawValue.trim();
+      if (!trimmed) {
+        return "";
+      }
+      const numeric = Number(trimmed);
+      if (Number.isFinite(numeric)) {
+        parsed = parseExcelDate(numeric);
+      } else {
+        parsed = dayjs(trimmed);
+      }
+    } else {
+      parsed = dayjs(String(rawValue));
+    }
+
+    if (!parsed.isValid()) {
+      return "";
+    }
+
+    const dateFormat = field.format ?? "YYYY-MM-DD";
+    return parsed.format(dateFormat);
+  }
 
   if (field.format) {
     return applyFormat(rawValue, field.format);

@@ -16,7 +16,7 @@
     { "x": 25, "y": 60,  "align": "center", "fontSize": 5, "fontWeight": 400, "static": "支票號碼"},
     { "x": 70, "y": 60,  "align": "center", "fontSize": 5, "fontWeight": 400, "key":    "check_id"},
     { "x": 25, "y": 70,  "align": "center", "fontSize": 5, "fontWeight": 400, "static": "到期日"},
-    { "x": 70, "y": 70,  "align": "center", "fontSize": 5, "fontWeight": 400, "input": {"key": "due_date", "label": "到期日","placeholder": "請輸入到期日"}},
+    { "x": 70, "y": 70,  "align": "center", "fontSize": 5, "fontWeight": 400, "key":    "due_date", "type": "date", "format": "YYYY年MM月DD日"},
     { "x": 25, "y": 80,  "align": "center", "fontSize": 5, "fontWeight": 400, "static": "憑票支付"},
     { "x": 70, "y": 80,  "align": "center", "fontSize": 5, "fontWeight": 400, "key":    "payee"},
     { "x": 25, "y": 90,  "align": "center", "fontSize": 5, "fontWeight": 400, "static": "新臺幣"},

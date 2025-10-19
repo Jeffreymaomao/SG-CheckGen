@@ -14,6 +14,7 @@ export interface TemplateField {
   align?: "left" | "right" | "center";
   format?: string;
   static?: string;
+  type?: "text" | "date" | "number" | "currency";
   input?: {
     key?: string;
     label?: string;
