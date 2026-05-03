@@ -30,7 +30,7 @@
     { "x": 15, "y": 134, "align": "left", "fontSize": 3.2, "fontWeight": 350, "static": "3. 交易之次月10日前，將上月份之對帳單、發票並附上回郵信封至本公司請款，若未在期限內請款者順延於次月請款。"}
   ],
   "decor": [
-    { "type": "image", "src": "/assets/logo.png", "x": 15, "y": 7, "h": 30, "preserveAspectRatio": "xMidYMid meet" },
+    { "type": "image", "src": "assets/logo.png", "x": 15, "y": 7, "w": 30, "h": 30, "preserveAspectRatio": "xMidYMid meet" },
     { "type": "rect", "x": 5, "y": 5, "w": 200, "h": 137, "radius": 3, "stroke": true, "fill": false },
     { "type": "line", "x1": 10,  "x2": 200, "y1": 55, "y2": 55},
     { "type": "line", "x1": 105, "x2": 200, "y1": 68, "y2": 68},
