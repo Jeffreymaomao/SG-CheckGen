@@ -9,6 +9,7 @@ import { PlatformAgent } from "./PlatformAgent";
 import type { CheckRecord, WorkbookSheet } from "../types";
 
 const fileAgent = new FileAgent();
+const ACTIVE_TEMPLATE_STORAGE_KEY = "check-generator:active-template";
 const STORAGE_PREFIX = "check-generator:template-inputs:";
 const TEMPLATE_PREVIEW_RECORD: CheckRecord = {
   check_id: "check_id",
@@ -26,7 +27,24 @@ export const UIAgent: React.FC = () => {
 
   const [records, setRecords] = useState<CheckRecord[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
-  const [activeTemplate, setActiveTemplate] = useState(templateAgent.getActive()?.id ?? "");
+  const [activeTemplate, setActiveTemplate] = useState(() => {
+    const fallbackTemplateId = templateAgent.getActive()?.id ?? "";
+
+    if (typeof window === "undefined") {
+      return fallbackTemplateId;
+    }
+
+    try {
+      const storedTemplateId = window.localStorage.getItem(ACTIVE_TEMPLATE_STORAGE_KEY);
+      const templateExists = templateAgent
+        .getAll()
+        .some((item) => item.id === storedTemplateId);
+      return storedTemplateId && templateExists ? storedTemplateId : fallbackTemplateId;
+    } catch (error) {
+      console.warn("Failed to restore active template", error);
+      return fallbackTemplateId;
+    }
+  });
   const [sheets, setSheets] = useState<WorkbookSheet[]>([]);
   const [activeSheetIndex, setActiveSheetIndex] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -62,6 +80,18 @@ export const UIAgent: React.FC = () => {
     });
     return Array.from(unique.values());
   }, [template]);
+
+  useEffect(() => {
+    if (!activeTemplate || typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(ACTIVE_TEMPLATE_STORAGE_KEY, activeTemplate);
+    } catch (error) {
+      console.warn("Failed to persist active template", error);
+    }
+  }, [activeTemplate]);
 
   useEffect(() => {
     if (typeof document === "undefined") {
