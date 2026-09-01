@@ -10,7 +10,7 @@ import type { CheckRecord, WorkbookSheet } from "../types";
 
 const fileAgent = new FileAgent();
 const STORAGE_PREFIX = "check-generator:template-inputs:";
-const DEV_PREVIEW_RECORD: CheckRecord = {
+const TEMPLATE_PREVIEW_RECORD: CheckRecord = {
   check_id: "check_id",
   due_date: "1991-01-01",
   payee: "payee（收款人）",
@@ -276,8 +276,8 @@ export const UIAgent: React.FC = () => {
     return Array.from(new Set(keys));
   }, [template]);
 
-  const devPreviewRecord = useMemo(() => {
-    const previewRecord: CheckRecord = { ...DEV_PREVIEW_RECORD };
+  const templatePreviewRecord = useMemo(() => {
+    const previewRecord: CheckRecord = { ...TEMPLATE_PREVIEW_RECORD };
 
     template?.fields.forEach((field) => {
       if (!field.key || previewRecord[field.key] != null) {
@@ -296,7 +296,7 @@ export const UIAgent: React.FC = () => {
     return previewRecord;
   }, [template]);
 
-  const devPreviewInputs = useMemo(() => {
+  const templatePreviewInputs = useMemo(() => {
     const previewInputs: Record<string, string> = {};
 
     inputConfigs.forEach((input) => {
@@ -435,14 +435,14 @@ export const UIAgent: React.FC = () => {
               </p>
             </div>
 
-            {import.meta.env.DEV && template && (
+            {template && (
               <div className="no-print mt-8 w-full overflow-x-auto pb-1">
                 <div className="mx-auto w-max">
                   <RenderAgent
                     template={template}
-                    record={devPreviewRecord}
+                    record={templatePreviewRecord}
                     pageIndex={0}
-                    customInputs={devPreviewInputs}
+                    customInputs={templatePreviewInputs}
                   />
                 </div>
               </div>
