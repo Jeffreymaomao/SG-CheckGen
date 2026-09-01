@@ -1,12 +1,20 @@
-import defaultTemplate from "../templates/default_tw_bank.json";
 import type { CheckTemplate } from "../types";
+
+const templateModules = import.meta.glob<CheckTemplate>("../templates/*.json", {
+  eager: true,
+  import: "default"
+});
+
+const bundledTemplates = Object.entries(templateModules)
+  .sort(([pathA], [pathB]) => pathA.localeCompare(pathB))
+  .map(([, template]) => template);
 
 export class TemplateAgent {
   private templates: Map<string, CheckTemplate> = new Map();
   private activeId: string;
 
   constructor(initial?: CheckTemplate[]) {
-    const bundled = [defaultTemplate as CheckTemplate, ...(initial ?? [])];
+    const bundled = [...bundledTemplates, ...(initial ?? [])];
     bundled.forEach((template) => {
       this.templates.set(template.id, template);
     });

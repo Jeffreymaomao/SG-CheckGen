@@ -10,6 +10,13 @@ import type { CheckRecord, WorkbookSheet } from "../types";
 
 const fileAgent = new FileAgent();
 const STORAGE_PREFIX = "check-generator:template-inputs:";
+const DEV_PREVIEW_RECORD: CheckRecord = {
+  check_id: "check_id",
+  due_date: "1991-01-01",
+  payee: "payee（收款人）",
+  amount: 128000,
+  memo: "memo（備註）"
+};
 
 export const UIAgent: React.FC = () => {
   const platform = useMemo(() => new PlatformAgent(), []);
@@ -269,6 +276,38 @@ export const UIAgent: React.FC = () => {
     return Array.from(new Set(keys));
   }, [template]);
 
+  const devPreviewRecord = useMemo(() => {
+    const previewRecord: CheckRecord = { ...DEV_PREVIEW_RECORD };
+
+    template?.fields.forEach((field) => {
+      if (!field.key || previewRecord[field.key] != null) {
+        return;
+      }
+
+      if (field.type === "date") {
+        previewRecord[field.key] = "2026-09-30";
+      } else if (field.type === "number" || field.type === "currency") {
+        previewRecord[field.key] = 128000;
+      } else {
+        previewRecord[field.key] = `範例 ${field.key}`;
+      }
+    });
+
+    return previewRecord;
+  }, [template]);
+
+  const devPreviewInputs = useMemo(() => {
+    const previewInputs: Record<string, string> = {};
+
+    inputConfigs.forEach((input) => {
+      previewInputs[input.key] = customInputs[input.key]
+        || input.defaultValue
+        || (input.label.includes("月") ? "2026 年 9 月" : `範例${input.label}`);
+    });
+
+    return previewInputs;
+  }, [customInputs, inputConfigs]);
+
   return (
     <div className="flex h-full flex-col gap-4 p-4 print:p-0 print:m-0 print-no-padding-margin">
       <header className="flex flex-wrap items-center gap-3 no-print">
@@ -383,16 +422,31 @@ export const UIAgent: React.FC = () => {
       <section className="flex-1 overflow-visible overflow-y-auto rounded border border-slate-200 bg-white print:p-0 print:m-0 print:border-none print-no-padding-margin" id="preview-container">
         {loading && <p className="text-sm text-slate-500">Parsing workbook…</p>}
         {!loading && !hasRecords && (
-          <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-slate-500">
-            <p>上傳 Excel 工作表，以預覽列印支票，</p>
-            <p>並確保標題名包含{' '}
-              {mustHaveFields.map((f, i) => (
-                <React.Fragment key={i}>
-                  <span className="border border-black p-1 rounded mx-1 bg-green-100 font-mono text-slate-700">{f}</span>
-                  {i !== mustHaveFields.length - 1 && '、'}
-                </React.Fragment>
-              ))}。
-            </p>
+          <div className="flex min-h-full flex-col items-center justify-center py-10 text-center text-sm text-slate-500">
+            <div className="flex flex-col gap-2">
+              <p>上傳 Excel 工作表，以預覽列印支票，</p>
+              <p>並確保標題名包含{' '}
+                {mustHaveFields.map((f, i) => (
+                  <React.Fragment key={i}>
+                    <span className="border border-black p-1 rounded mx-1 bg-green-100 font-mono text-slate-700">{f}</span>
+                    {i !== mustHaveFields.length - 1 && '、'}
+                  </React.Fragment>
+                ))}。
+              </p>
+            </div>
+
+            {import.meta.env.DEV && template && (
+              <div className="no-print mt-8 w-full overflow-x-auto pb-1">
+                <div className="mx-auto w-max">
+                  <RenderAgent
+                    template={template}
+                    record={devPreviewRecord}
+                    pageIndex={0}
+                    customInputs={devPreviewInputs}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
         {!loading && hasRecords && template && (

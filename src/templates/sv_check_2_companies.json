@@ -1,6 +1,6 @@
 {
-  "id": "default_tw_bank",
-  "label": "Default (TW)",
+  "id": "sv_check_2_companies",
+  "label": "尚谷營造、尚谷工程支票簽收聯",
   "page": { "unit": "mm", "width": 210, "height": 147, "margin": 3 },
   "font": { "family": "Noto Sans TC", "size": 10, "weight": 500 },
   "fields": [
